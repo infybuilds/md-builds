@@ -1,0 +1,33 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "main": ".open-next/worker.js",
+  "name": "md-infybuilds",
+  "compatibility_date": "2026-09-01",
+  // nodejs_compat is required: the app runs on the Node.js runtime (Next 16's
+  // proxy has no edge option), and Supabase plus the Markdown pipeline use Node
+  // built-ins. global_fetch_strictly_public makes fetch() to our own domain go
+  // back out through the network rather than short-circuiting internally.
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      // Self-reference, so cache revalidation can call back into the worker.
+      // The service name must match "name" above.
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "md-infybuilds"
+    }
+  ],
+  "r2_buckets": [
+    {
+      // Shared incremental cache. Without it each isolate caches independently
+      // and `revalidatePath` after publishing would not reach every reader.
+      // Create it before the first deploy:
+      //   npx wrangler r2 bucket create md-infybuilds-opennext-cache
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "md-infybuilds-opennext-cache"
+    }
+  ]
+}

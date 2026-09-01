@@ -42,3 +42,7 @@ next-env.d.ts
 
 # but do commit the example
 !.env.example
+
+# cloudflare / opennext build output
+.open-next/
+.wrangler/

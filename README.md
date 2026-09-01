@@ -108,6 +108,63 @@ supabase/migrations/  schema and RLS
 proxy.ts              session refresh + optimistic /admin redirect
 ```
 
+## Deploying to Cloudflare
+
+The app deploys to **Cloudflare Workers** (with static assets) via
+[`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare), not to Pages.
+That is forced, not preference: `@cloudflare/next-on-pages` declares support only
+for `next <= 15.5.2`, and Next.js 16's Proxy has no edge runtime option, so the
+Pages adapter cannot run this app.
+
+```bash
+npm run cf:preview   # build + run the real Workers runtime locally
+npm run cf:deploy    # build + deploy
+```
+
+Before the first deploy, create the incremental-cache bucket:
+
+```bash
+npx wrangler r2 bucket create md-infybuilds-opennext-cache
+```
+
+### Environment variables
+
+`NEXT_PUBLIC_*` values are consumed **while the build runs** — public pages are
+prerendered, which executes the Supabase client — so they must be set as *build*
+variables, not only as runtime variables. In Cloudflare set all three in both
+scopes, for Production and Preview:
+
+```
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+NEXT_PUBLIC_SITE_URL       # https://md.infybuilds.com in production
+```
+
+`NEXT_PUBLIC_SITE_URL` falls back to `http://localhost:3000`, so leaving it unset
+in production silently produces wrong canonical and Open Graph URLs.
+
+If you build in Cloudflare's CI, the commands are:
+
+```
+Build:  npx opennextjs-cloudflare build
+Deploy: npx opennextjs-cloudflare deploy
+```
+
+### Workers-specific constraints
+
+Two things about this runtime are load-bearing, and both are easy to undo by
+accident:
+
+- **No runtime WebAssembly.** Workers reject `WebAssembly.instantiate` on raw
+  bytes ("Wasm code generation disallowed by embedder"). Shiki's default
+  Oniguruma engine does exactly that, so `lib/markdown/shiki.ts` uses
+  `createJavaScriptRegexEngine` instead. Do not switch back to the default
+  engine or import from `shiki` root/`shiki/bundle/full`.
+- **Fine-grained grammar imports.** Only the languages imported explicitly in
+  `lib/markdown/shiki.ts` are available; anything else in a fence renders as
+  plain text. Adding a language means adding an import, which keeps the worker
+  small.
+
 ## Not built yet
 
 Search, `sitemap.xml`, `robots.txt`, analytics and ad placements are planned but

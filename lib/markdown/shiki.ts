@@ -1,68 +1,95 @@
-import { bundledLanguages, createHighlighter, type Highlighter } from "shiki";
-import type { BundledLanguage } from "shiki";
+import { createHighlighterCore, type HighlighterCore } from "shiki/core";
+import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
 import type { Element, Root, RootContent } from "hast";
 
-/**
- * Languages loaded up front — the set the workshop material actually uses.
- * Anything else is loaded on demand in `resolveLanguage`.
- */
-const PRELOADED_LANGUAGES = [
-  "bash",
-  "javascript",
-  "typescript",
-  "tsx",
-  "jsx",
-  "php",
-  "sql",
-  "json",
-  "html",
-  "css",
-  "markdown",
-  "yaml",
-  "diff",
-] satisfies BundledLanguage[];
+// Fine-grained imports rather than shiki's full bundle: only these grammars end
+// up in the deployment artifact, which matters on Cloudflare Workers where the
+// whole app ships as one worker.
+import bash from "shiki/langs/bash.mjs";
+import css from "shiki/langs/css.mjs";
+import diff from "shiki/langs/diff.mjs";
+import html from "shiki/langs/html.mjs";
+import javascript from "shiki/langs/javascript.mjs";
+import json from "shiki/langs/json.mjs";
+import jsx from "shiki/langs/jsx.mjs";
+import markdown from "shiki/langs/markdown.mjs";
+import php from "shiki/langs/php.mjs";
+import sql from "shiki/langs/sql.mjs";
+import tsx from "shiki/langs/tsx.mjs";
+import typescript from "shiki/langs/typescript.mjs";
+import yaml from "shiki/langs/yaml.mjs";
+import githubDark from "shiki/themes/github-dark.mjs";
+import githubLight from "shiki/themes/github-light.mjs";
+
+const LANGUAGES = [
+  bash,
+  css,
+  diff,
+  html,
+  javascript,
+  json,
+  jsx,
+  markdown,
+  php,
+  sql,
+  tsx,
+  typescript,
+  yaml,
+];
 
 /** Emits light colours inline plus `--shiki-dark` custom properties. */
 const THEMES = { light: "github-light", dark: "github-dark" } as const;
 
-// One highlighter per server process: loading the WASM engine and grammars is
-// expensive, so the promise is memoized rather than the resolved value.
-let highlighterPromise: Promise<Highlighter> | undefined;
+/**
+ * Aliases people actually type in fences, mapped to the grammars loaded above.
+ * Anything not listed renders as plain text rather than failing.
+ */
+const ALIASES: Record<string, string> = {
+  sh: "bash",
+  shell: "bash",
+  zsh: "bash",
+  console: "bash",
+  js: "javascript",
+  ts: "typescript",
+  yml: "yaml",
+  md: "markdown",
+  htm: "html",
+  postgres: "sql",
+  postgresql: "sql",
+  mysql: "sql",
+};
 
-function getHighlighter(): Promise<Highlighter> {
-  highlighterPromise ??= createHighlighter({
-    themes: [THEMES.light, THEMES.dark],
-    langs: [...PRELOADED_LANGUAGES],
+// One highlighter per isolate; the promise is memoized, not the resolved value.
+let highlighterPromise: Promise<HighlighterCore> | undefined;
+
+function getHighlighter(): Promise<HighlighterCore> {
+  highlighterPromise ??= createHighlighterCore({
+    themes: [githubLight, githubDark],
+    langs: LANGUAGES,
+    // The JavaScript regex engine, not Oniguruma. Cloudflare Workers refuse to
+    // compile WebAssembly at runtime ("Wasm code generation disallowed by
+    // embedder"), which is what the default engine does. `forgiving` skips the
+    // few regex patterns this engine cannot express instead of throwing.
+    engine: createJavaScriptRegexEngine({ forgiving: true }),
   });
   return highlighterPromise;
 }
 
 /**
- * Maps a fence's language hint onto something Shiki can actually highlight.
- * Unknown hints degrade to plain text instead of throwing — an admin typo in a
- * fence must never take a published page down.
+ * Resolves a fence's language hint to a loaded grammar. Unknown hints degrade to
+ * plain text — an admin's typo in a fence must never take a published page down.
  */
-async function resolveLanguage(
-  highlighter: Highlighter,
+function resolveLanguage(
+  highlighter: HighlighterCore,
   requested: string,
-): Promise<string> {
-  const lang = requested.trim().toLowerCase();
+): string {
+  const hint = requested.trim().toLowerCase();
+  if (!hint) return "text";
 
-  if (!lang || lang === "text" || lang === "plaintext" || lang === "txt") {
-    return "text";
-  }
-  if (highlighter.getLoadedLanguages().includes(lang)) {
-    return lang;
-  }
-  if (lang in bundledLanguages) {
-    try {
-      await highlighter.loadLanguage(lang as BundledLanguage);
-      return lang;
-    } catch {
-      return "text";
-    }
-  }
-  return "text";
+  const candidate = ALIASES[hint] ?? hint;
+  return highlighter.getLoadedLanguages().includes(candidate)
+    ? candidate
+    : "text";
 }
 
 type ParentNode = { children: RootContent[] };
@@ -92,7 +119,7 @@ function languageFromClassName(code: Element): string {
   return "";
 }
 
-/** Collects every `<pre><code>` pair, deepest-last, without mutating the tree. */
+/** Collects every `<pre><code>` pair without mutating the tree. */
 function collectCodeBlocks(node: ParentNode, out: PendingBlock[]): void {
   node.children.forEach((child, index) => {
     if (child.type !== "element") return;
@@ -118,9 +145,9 @@ function collectCodeBlocks(node: ParentNode, out: PendingBlock[]): void {
 }
 
 /**
- * Rehype transformer that swaps fenced code blocks for Shiki output wrapped in
- * a `<figure data-language>` so the client-side copy button has something
- * stable to attach to.
+ * Rehype transformer that swaps fenced code blocks for Shiki output wrapped in a
+ * `<figure data-language>`, giving the client-side copy button something stable
+ * to attach to.
  *
  * Must run *after* rehype-sanitize: Shiki's inline styles and span classes are
  * generated from already-sanitized text, so the sanitizer never has to be
@@ -135,34 +162,26 @@ export function rehypeShiki() {
 
     const highlighter = await getHighlighter();
 
-    const replacements = await Promise.all(
-      blocks.map(async (block) => {
-        const language = await resolveLanguage(highlighter, block.language);
-        const highlighted = highlighter.codeToHast(block.code, {
-          lang: language,
-          themes: THEMES,
-        });
+    for (const block of blocks) {
+      const language = resolveLanguage(highlighter, block.language);
+      const highlighted = highlighter.codeToHast(block.code, {
+        lang: language,
+        themes: THEMES,
+      });
 
-        const pre = highlighted.children.find(
-          (child): child is Element => child.type === "element",
-        );
+      const pre = highlighted.children.find(
+        (child): child is Element => child.type === "element",
+      );
 
-        const figure: Element = {
-          type: "element",
-          tagName: "figure",
-          properties: {
-            className: ["code-block"],
-            "data-language": language === "text" ? undefined : language,
-          },
-          children: pre ? [pre] : [],
-        };
-
-        return { block, figure };
-      }),
-    );
-
-    for (const { block, figure } of replacements) {
-      block.parent.children[block.index] = figure;
+      block.parent.children[block.index] = {
+        type: "element",
+        tagName: "figure",
+        properties: {
+          className: ["code-block"],
+          "data-language": language === "text" ? undefined : language,
+        },
+        children: pre ? [pre] : [],
+      };
     }
   };
 }
