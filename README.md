@@ -22,12 +22,15 @@ Database setup, including how to create the first admin, is in
 [`supabase/README.md`](supabase/README.md). `npm run build` needs no environment
 configuration at all — the variables are read per request, not at build time.
 
-| Script          | Purpose                          |
-| --------------- | -------------------------------- |
-| `npm run dev`   | Dev server (Turbopack)           |
-| `npm run build` | Production build                 |
-| `npm run lint`  | ESLint                           |
-| `npx tsc --noEmit` | Type check                    |
+| Script                | Purpose                                       |
+| --------------------- | --------------------------------------------- |
+| `npm run dev`         | Dev server (Turbopack)                        |
+| `npm run build`       | Production build **for Cloudflare** (OpenNext) |
+| `npm run build:next`  | Plain `next build`, for a quick check          |
+| `npm run preview`     | Build + serve on the real Workers runtime      |
+| `npm run deploy`      | Deploy the built worker                       |
+| `npm run lint`        | ESLint                                        |
+| `npx tsc --noEmit`    | Type check                                    |
 
 ## How authorization works
 
@@ -116,9 +119,21 @@ for `next <= 15.5.2`, and Next.js 16's Proxy has no edge runtime option, so the
 Pages adapter cannot run this app.
 
 ```bash
-npm run cf:preview   # build + run the real Workers runtime locally
-npm run cf:deploy    # build + deploy
+npm run preview   # build + run the real Workers runtime locally
+npm run deploy    # deploy the built worker
 ```
+
+`npm run build` *is* the Cloudflare build, so Cloudflare's default build command
+(`npm run build`) works with no dashboard configuration. Two things make that
+safe, and both matter if you ever touch them:
+
+- `open-next.config.ts` pins `buildCommand` to `npx next build`. OpenNext
+  otherwise runs `npm run build`, which here runs OpenNext — infinite recursion.
+- `npm run build:next` remains available for a plain Next build.
+
+The deploy step needs `.open-next/.build/open-next.config.mjs`, which only the
+OpenNext build produces. If the deploy fails with "Could not find compiled Open
+Next config", the build command ran plain `next build`.
 
 Before the first deploy, create the incremental-cache bucket:
 
