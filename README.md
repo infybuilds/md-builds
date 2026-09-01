@@ -19,9 +19,8 @@ npm run dev
 ```
 
 Database setup, including how to create the first admin, is in
-[`supabase/README.md`](supabase/README.md). The app throws a clear error on
-startup if `NEXT_PUBLIC_SUPABASE_URL` or `NEXT_PUBLIC_SUPABASE_ANON_KEY` is
-missing, so configure those before running `npm run dev` or `npm run build`.
+[`supabase/README.md`](supabase/README.md). `npm run build` needs no environment
+configuration at all — the variables are read per request, not at build time.
 
 | Script          | Purpose                          |
 | --------------- | -------------------------------- |
@@ -129,26 +128,29 @@ npx wrangler r2 bucket create md-infybuilds-opennext-cache
 
 ### Environment variables
 
-`NEXT_PUBLIC_*` values are consumed **while the build runs** — public pages are
-prerendered, which executes the Supabase client — so they must be set as *build*
-variables, not only as runtime variables. In Cloudflare set all three in both
-scopes, for Production and Preview:
+Set these as **runtime** variables and secrets on the Worker. No build variables
+are needed:
 
 ```
-NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY
-NEXT_PUBLIC_SITE_URL       # https://md.infybuilds.com in production
+SUPABASE_URL
+SUPABASE_ANON_KEY        # the publishable key; mark it as a secret
+SITE_URL                 # https://md.infybuilds.com in production
 ```
 
-`NEXT_PUBLIC_SITE_URL` falls back to `http://localhost:3000`, so leaving it unset
-in production silently produces wrong canonical and Open Graph URLs.
+The missing `NEXT_PUBLIC_` prefix is deliberate and load-bearing. Next.js
+replaces `process.env.NEXT_PUBLIC_*` with string literals at build time, so a
+prefixed variable is baked in during the build and a runtime variable for it is
+simply ignored — the built code no longer reads `process.env`. Unprefixed names
+are read per request. Renaming these back to `NEXT_PUBLIC_*` would reintroduce
+build-time configuration and break runtime-only setups.
 
-If you build in Cloudflare's CI, the commands are:
+`SITE_URL` falls back to `http://localhost:3000`, so leaving it unset in
+production silently produces wrong canonical and Open Graph URLs.
 
-```
-Build:  npx opennextjs-cloudflare build
-Deploy: npx opennextjs-cloudflare deploy
-```
+The public index pages (`/`, `/docs`, `/workshops`) set
+`export const dynamic = "force-dynamic"` so the build performs no database
+access. That is what lets a build succeed with no configuration; it also means
+publishing is visible immediately, with no revalidation step.
 
 ### Workers-specific constraints
 

@@ -39,17 +39,23 @@ Copy `.env.example` to `.env.local` in the repo root and fill in the two values
 from **Project Settings → API Keys**:
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
+SUPABASE_URL=https://<project-ref>.supabase.co
+SUPABASE_ANON_KEY=sb_publishable_...
+SITE_URL=http://localhost:3000
 ```
 
-Use the **publishable** key. It replaces the legacy `anon` key and is meant to
-be exposed in a browser; the variable name is kept for continuity with the
-Supabase docs. Never put a **secret** key (`sb_secret_...`) in a `NEXT_PUBLIC_`
-variable — it bypasses RLS and would be shipped to every visitor.
+Use the **publishable** key. It replaces the legacy `anon` key and is safe to
+expose, though in this app it never leaves the server. Never use a **secret** key
+(`sb_secret_...`) — it bypasses RLS.
 
-`SUPABASE_SERVICE_ROLE_KEY` is intentionally unused by this app — every read and
-write goes through RLS with the anon key plus the user's session. Do not add it.
+These names have no `NEXT_PUBLIC_` prefix on purpose. Next.js inlines
+`NEXT_PUBLIC_*` into the bundle at build time, so such variables can only come
+from the build environment; unprefixed names are read from `process.env` per
+request and can therefore be supplied as production runtime variables. Every
+Supabase call in this app is server-side, so nothing needs the prefix.
+
+`SUPABASE_SERVICE_ROLE_KEY` is intentionally unused — reads and writes go
+through RLS with the publishable key plus the user's session. Do not add it.
 
 ## 3. Create the first admin
 
@@ -89,12 +95,12 @@ prove nothing. Test as `anon` instead, e.g. against the REST API:
 
 ```bash
 # Should return only published documents
-curl "$NEXT_PUBLIC_SUPABASE_URL/rest/v1/documents?select=slug,published" \
-  -H "apikey: $NEXT_PUBLIC_SUPABASE_ANON_KEY"
+curl "$SUPABASE_URL/rest/v1/documents?select=slug,published" \
+  -H "apikey: $SUPABASE_ANON_KEY"
 
 # Should be rejected by RLS
-curl -X POST "$NEXT_PUBLIC_SUPABASE_URL/rest/v1/documents" \
-  -H "apikey: $NEXT_PUBLIC_SUPABASE_ANON_KEY" \
+curl -X POST "$SUPABASE_URL/rest/v1/documents" \
+  -H "apikey: $SUPABASE_ANON_KEY" \
   -H "Content-Type: application/json" \
   -d '{"title":"nope","slug":"nope"}'
 ```

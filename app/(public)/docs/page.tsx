@@ -15,6 +15,15 @@ export const metadata: Metadata = {
 
 const UNCATEGORISED = "other-guides";
 
+/**
+ * Rendered on demand rather than prerendered at build time. The build would
+ * otherwise need database credentials just to produce these pages, which couples
+ * every build to environment configuration; the queries here are small and the
+ * pages are served from the edge either way. Publishing also shows up
+ * immediately, with no revalidation step.
+ */
+export const dynamic = "force-dynamic";
+
 export default async function DocsIndexPage() {
   const [categories, documents] = await Promise.all([
     getPublicCategories(),
