@@ -135,11 +135,27 @@ The deploy step needs `.open-next/.build/open-next.config.mjs`, which only the
 OpenNext build produces. If the deploy fails with "Could not find compiled Open
 Next config", the build command ran plain `next build`.
 
-Before the first deploy, create the incremental-cache bucket:
+No Cloudflare resources need provisioning — the worker binds only its static
+assets.
 
-```bash
-npx wrangler r2 bucket create md-infybuilds-opennext-cache
-```
+### Page caching
+
+There is deliberately no incremental (page) cache, so rendered pages are not
+persisted between requests. R2 requires a paid subscription, and once the index
+pages became `force-dynamic` the only routes a cache could serve were
+`/docs/[slug]` and `/workshops/[slug]`, each costing one Supabase query plus a
+Markdown render.
+
+D1 does not fit this role: in OpenNext, D1 backs the *tag* cache, not the page
+cache, and a tag cache only helps alongside a page cache with `revalidateTag`,
+which this app does not use.
+
+To add caching without an R2 subscription, use Workers KV. Create a namespace,
+add the returned id to `wrangler.jsonc` as `NEXT_INC_CACHE_KV` along with a
+`WORKER_SELF_REFERENCE` service binding, and pass the adapter's
+`kv-incremental-cache` override to `defineCloudflareConfig` in
+`open-next.config.ts`. The exact snippets are in the comments at the bottom of
+`wrangler.jsonc`.
 
 ### Environment variables
 

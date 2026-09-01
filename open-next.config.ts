@@ -1,14 +1,16 @@
 import { defineCloudflareConfig } from "@opennextjs/cloudflare";
-import r2IncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/r2-incremental-cache";
 
 /**
- * R2 backs the incremental cache so a publish invalidates pages for every
- * reader, not just the isolate that handled the mutation. See wrangler.jsonc for
- * the bucket binding.
+ * No `incrementalCache` override is configured, so rendered pages are not
+ * persisted between requests.
+ *
+ * That is a deliberate trade for zero infrastructure: R2 needs a paid
+ * subscription, and after making the index pages `force-dynamic` the only routes
+ * a page cache could serve are /docs/[slug] and /workshops/[slug]. Their cost is
+ * one Supabase query plus a Markdown render. See wrangler.jsonc for how to add
+ * Workers KV as a cache without an R2 subscription.
  */
-const config = defineCloudflareConfig({
-  incrementalCache: r2IncrementalCache,
-});
+const config = defineCloudflareConfig();
 
 /**
  * Invoke the Next CLI directly rather than the package manager's `build` script.

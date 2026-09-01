@@ -11,25 +11,19 @@
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
-  },
-  "services": [
-    {
-      // Self-reference, so cache revalidation can call back into the worker.
-      // The service name must match "name" above.
-      "binding": "WORKER_SELF_REFERENCE",
-      "service": "md-builds"
-    }
-  ],
-  "r2_buckets": [
-    {
-      // Shared incremental cache. Without it each isolate caches independently
-      // and `revalidatePath` after publishing would not reach every reader.
-      // The bucket name is independent of the worker name above — only the
-      // WORKER_SELF_REFERENCE service has to match that. Create it before the
-      // first deploy:
-      //   npx wrangler r2 bucket create md-infybuilds-opennext-cache
-      "binding": "NEXT_INC_CACHE_R2_BUCKET",
-      "bucket_name": "md-infybuilds-opennext-cache"
-    }
-  ]
+  }
+  // No incremental cache binding, and so no WORKER_SELF_REFERENCE either (that
+  // binding exists only to let cache revalidation call back into the worker).
+  //
+  // Every content route is server-rendered on demand, so there is little for a
+  // page cache to hold: the index pages are force-dynamic and the admin pages
+  // read cookies. Only /docs/[slug] and /workshops/[slug] would benefit.
+  //
+  // To add one later, Workers KV needs no R2 subscription:
+  //   npx wrangler kv namespace create md-builds-cache
+  // then add the returned id here...
+  //   "kv_namespaces": [{ "binding": "NEXT_INC_CACHE_KV", "id": "<id>" }],
+  //   "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "md-builds" }]
+  // ...and in open-next.config.ts swap the incrementalCache override to
+  //   "@opennextjs/cloudflare/overrides/incremental-cache/kv-incremental-cache"
 }
