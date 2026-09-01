@@ -2,8 +2,8 @@
 
 import { Eye, PencilLine } from "lucide-react";
 import { useActionState, useState } from "react";
+import dynamic from "next/dynamic";
 
-import { MarkdownPreview } from "@/components/markdown/markdown-preview";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FieldError, FormMessage } from "@/components/ui/field-error";
@@ -22,6 +22,24 @@ import { initialFormState, type FormState } from "@/lib/actions/form-state";
 import { slugify } from "@/lib/slug";
 import { cn } from "@/lib/utils";
 import type { Category, Document, Workshop } from "@/types/database";
+
+/**
+ * The preview only does anything once the editor is interactive, so it is loaded
+ * client-side only. That keeps react-markdown and its unified chain out of the
+ * server bundle, which matters for the Cloudflare Workers size limit.
+ */
+const MarkdownPreview = dynamic(
+  () =>
+    import("@/components/markdown/markdown-preview").then(
+      (mod) => mod.MarkdownPreview,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <p className="text-muted-foreground text-sm">Loading preview…</p>
+    ),
+  },
+);
 
 /** Radix Select rejects empty-string values, so "none" is the null sentinel. */
 const NONE = "none";
