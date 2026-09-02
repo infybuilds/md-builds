@@ -17,9 +17,22 @@ const SLOT_ENV: Record<AdPlacement, string> = {
   sidebar: "ADS_SLOT_SIDEBAR",
 };
 
-/** AdSense publisher id, e.g. ca-pub-0000000000000000. */
+/**
+ * AdSense publisher id, normalised to the `ca-pub-…` form the script tag needs.
+ *
+ * Google uses two spellings of the same id: ads.txt takes the bare
+ * `pub-0000000000000000`, while the loader URL needs `ca-pub-0000000000000000`.
+ * Copying the value from the wrong place silently produces a loader that AdSense
+ * does not recognise, so both forms (and the bare digits) are accepted here.
+ */
 export function adsClientId(): string | undefined {
-  return process.env.ADS_CLIENT_ID?.trim() || undefined;
+  const raw = process.env.ADS_CLIENT_ID?.trim();
+  if (!raw) return undefined;
+
+  if (raw.startsWith("ca-pub-")) return raw;
+  if (raw.startsWith("pub-")) return `ca-${raw}`;
+  if (/^\d+$/.test(raw)) return `ca-pub-${raw}`;
+  return raw;
 }
 
 export function adsSlotId(placement: AdPlacement): string | undefined {

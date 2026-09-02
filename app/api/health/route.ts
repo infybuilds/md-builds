@@ -73,10 +73,30 @@ export async function GET() {
     }
   }
 
+  // Advertising is optional, so it never affects `ok` — but reporting it makes a
+  // mistyped publisher id visible instead of silently breaking the loader.
+  const rawAdsId = runtimeEnv("ADS_CLIENT_ID")?.trim();
+  const ads = {
+    configured: Boolean(rawAdsId),
+    // The publisher id is public (it appears in every page's HTML), so echoing
+    // the normalised value is safe and is the whole point of the check.
+    clientId: rawAdsId
+      ? rawAdsId.startsWith("ca-pub-")
+        ? rawAdsId
+        : rawAdsId.startsWith("pub-")
+          ? `ca-${rawAdsId}`
+          : rawAdsId
+      : null,
+    slots: {
+      sidebar: Boolean(runtimeEnv("ADS_SLOT_SIDEBAR")),
+      articleBottom: Boolean(runtimeEnv("ADS_SLOT_ARTICLE_BOTTOM")),
+    },
+  };
+
   const ok = missing.length === 0 && supabase.reachable && siteUrlValid;
 
   return Response.json(
-    { ok, missing, config, siteUrl: { valid: siteUrlValid, hasScheme: Boolean(rawSiteUrl && /^https?:\/\//i.test(rawSiteUrl)) }, supabase },
+    { ok, missing, config, ads, siteUrl: { valid: siteUrlValid, hasScheme: Boolean(rawSiteUrl && /^https?:\/\//i.test(rawSiteUrl)) }, supabase },
     { status: ok ? 200 : 503 },
   );
 }
