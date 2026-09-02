@@ -1,14 +1,33 @@
-import { ArrowRight, BookOpen, FileText } from "lucide-react";
+import type { Metadata } from "next";
+import { ArrowRight, BookOpen, Eye, FileText } from "lucide-react";
 import Link from "next/link";
 
+import { JsonLd } from "@/components/seo/json-ld";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   getPublishedDocuments,
   getPublishedWorkshops,
 } from "@/lib/content/public";
+import { siteSchema } from "@/lib/seo/schema";
+import { OG_DEFAULTS, SITE_DESCRIPTION, SITE_TITLE } from "@/lib/seo/site";
 
 const LATEST_LIMIT = 8;
+
+export const metadata: Metadata = {
+  // `absolute` skips the "%s | InfyBuilds" template: the default title already
+  // ends in the brand, and applying the template would repeat it.
+  title: { absolute: SITE_TITLE },
+  description: SITE_DESCRIPTION,
+  alternates: { canonical: "/" },
+  openGraph: {
+    ...OG_DEFAULTS,
+    type: "website",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    url: "/",
+  },
+};
 
 /**
  * Rendered on demand rather than prerendered at build time. The build would
@@ -29,16 +48,25 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-16 sm:py-24">
+      <JsonLd data={siteSchema()} />
+
       <section>
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          InfyBuilds Docs
+          Markdown viewer &amp; developer docs
         </h1>
         <p className="text-muted-foreground mt-4 text-base leading-relaxed">
-          Developer guides, workshop materials and practical references. No
-          account needed — everything published here is free to read.
+          Paste Markdown or open a <code>.md</code> file and read it rendered
+          instantly — nothing leaves your browser. Then stay for the guides,
+          cheat sheets and workshop materials. No account needed, ever.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Button asChild>
+            <Link href="/viewer">
+              <Eye className="size-4" />
+              Open the Markdown viewer
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
             <Link href="/workshops">
               <BookOpen className="size-4" />
               Browse workshops

@@ -3,8 +3,11 @@ import { ArrowRight, Lock } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { JsonLd } from "@/components/seo/json-ld";
 import { Button } from "@/components/ui/button";
 import { getPublishedWorkshop, getWorkshopLessons } from "@/lib/content/public";
+import { breadcrumbSchema, courseSchema } from "@/lib/seo/schema";
+import { OG_DEFAULTS, SITE_NAME } from "@/lib/seo/site";
 
 export async function generateMetadata({
   params,
@@ -21,8 +24,9 @@ export async function generateMetadata({
     description,
     alternates: { canonical: `/workshops/${workshop.slug}` },
     openGraph: {
+      ...OG_DEFAULTS,
       type: "website",
-      title: `${workshop.title} | InfyBuilds`,
+      title: `${workshop.title} | ${SITE_NAME}`,
       description,
       url: `/workshops/${workshop.slug}`,
     },
@@ -41,6 +45,21 @@ export default async function WorkshopPage({
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-12 sm:py-16">
+      <JsonLd
+        data={courseSchema({
+          title: workshop.title,
+          description: workshop.description ?? undefined,
+          path: `/workshops/${workshop.slug}`,
+        })}
+      />
+      <JsonLd
+        data={breadcrumbSchema([
+          { name: "Home", path: "/" },
+          { name: "Workshops", path: "/workshops" },
+          { name: workshop.title, path: `/workshops/${workshop.slug}` },
+        ])}
+      />
+
       <h1 className="text-3xl font-semibold tracking-tight">
         {workshop.title}
       </h1>

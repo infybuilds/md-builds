@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { ThemeProvider } from "@/components/theme-provider";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE } from "@/lib/seo/site";
 import { siteUrl } from "@/lib/supabase/env";
 
 import "./globals.css";
@@ -21,11 +22,35 @@ export const metadata: Metadata = {
   // Makes the canonical and Open Graph URLs on child pages absolute.
   metadataBase: new URL(siteUrl()),
   title: {
-    default: "InfyBuilds Docs",
-    template: "%s | InfyBuilds",
+    default: SITE_TITLE,
+    template: `%s | ${SITE_NAME}`,
   },
-  description:
-    "Developer guides, workshop materials and practical references from InfyBuilds.",
+  description: SITE_DESCRIPTION,
+  applicationName: `${SITE_NAME} Markdown Hub`,
+  // Inherited by every page that does not set its own; the per-page exports
+  // override title, description and url while keeping siteName and locale.
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    locale: "en_US",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
+  twitter: { card: "summary_large_image" },
+  // The defaults are already index/follow; these are the directives that are
+  // not default. They let Google use a full-length snippet and a large image
+  // rather than the short forms it falls back to.
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-snippet": -1,
+      "max-image-preview": "large",
+      "max-video-preview": -1,
+    },
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

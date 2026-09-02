@@ -2,13 +2,24 @@ import type { Metadata } from "next";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
+import { JsonLd } from "@/components/seo/json-ld";
 import { getPublishedWorkshops } from "@/lib/content/public";
+import { breadcrumbSchema } from "@/lib/seo/schema";
+import { OG_DEFAULTS } from "@/lib/seo/site";
 
 export const metadata: Metadata = {
-  title: "Workshops",
+  title: "Free Developer Workshops, Lesson by Lesson",
   description:
-    "Hands-on workshop materials from InfyBuilds, organised lesson by lesson.",
+    "Hands-on workshop materials from InfyBuilds, organised lesson by lesson. Free to follow along, with no account needed.",
   alternates: { canonical: "/workshops" },
+  openGraph: {
+    ...OG_DEFAULTS,
+    type: "website",
+    title: "Free Developer Workshops, Lesson by Lesson",
+    description:
+      "Hands-on workshop materials from InfyBuilds, organised lesson by lesson. Free to follow along, with no account needed.",
+    url: "/workshops",
+  },
 };
 
 /**
@@ -25,6 +36,13 @@ export default async function WorkshopsPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-12 sm:py-16">
+      <JsonLd
+        data={breadcrumbSchema([
+          { name: "Home", path: "/" },
+          { name: "Workshops", path: "/workshops" },
+        ])}
+      />
+
       <h1 className="text-2xl font-semibold tracking-tight">Workshops</h1>
       <p className="text-muted-foreground mt-2">
         Follow along lesson by lesson. Nothing here needs an account.

@@ -1,16 +1,29 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { JsonLd } from "@/components/seo/json-ld";
 import {
   getPublicCategories,
   getPublishedDocuments,
 } from "@/lib/content/public";
+import { breadcrumbSchema } from "@/lib/seo/schema";
+import { OG_DEFAULTS } from "@/lib/seo/site";
 
+// A title tag is a search result's headline, so it says what the page holds
+// rather than repeating the one-word heading.
 export const metadata: Metadata = {
-  title: "Guides",
+  title: "Markdown Guides, Cheat Sheets & Developer Tutorials",
   description:
-    "Developer guides, tutorials and cheat sheets published by InfyBuilds.",
+    "Free developer guides, Markdown cheat sheets and tutorials, grouped by topic. Read them online — no account, no paywall.",
   alternates: { canonical: "/docs" },
+  openGraph: {
+    ...OG_DEFAULTS,
+    type: "website",
+    title: "Markdown Guides, Cheat Sheets & Developer Tutorials",
+    description:
+      "Free developer guides, Markdown cheat sheets and tutorials, grouped by topic. Read them online — no account, no paywall.",
+    url: "/docs",
+  },
 };
 
 const UNCATEGORISED = "other-guides";
@@ -56,6 +69,13 @@ export default async function DocsIndexPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-12 sm:py-16">
+      <JsonLd
+        data={breadcrumbSchema([
+          { name: "Home", path: "/" },
+          { name: "Guides", path: "/docs" },
+        ])}
+      />
+
       <h1 className="text-2xl font-semibold tracking-tight">Guides</h1>
       <p className="text-muted-foreground mt-2">
         Tutorials, references and cheat sheets, grouped by topic.

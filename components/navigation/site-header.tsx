@@ -5,6 +5,7 @@ import { ModeToggle } from "@/components/mode-toggle";
 import { Button } from "@/components/ui/button";
 
 const LINKS = [
+  { href: "/viewer", label: "Viewer" },
   { href: "/workshops", label: "Workshops" },
   { href: "/docs", label: "Guides" },
 ] as const;

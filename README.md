@@ -90,21 +90,80 @@ The admin editor's live preview uses `react-markdown` with the same sanitizer bu
 without Shiki, to keep a syntax highlighter out of the browser bundle. Fenced
 code is styled there but not colour-highlighted; published pages are.
 
+## SEO
+
+The site is aimed at two kinds of search: the branded/topic queries the guides
+answer, and the tool queries — "md viewer", "markdown viewer", "markdown
+online" — that `/viewer` answers. `lib/seo/site.ts` holds the site name, the
+keyword-led default title and the description, so those strings have one home.
+
+Three things to know before editing metadata.
+
+**Next.js merges metadata shallowly.** A page that exports `openGraph` replaces
+the root layout's object outright rather than adding to it. That silently drops
+`og:site_name`, `og:locale` *and* the image `app/opengraph-image.tsx`
+contributes by file convention — the tags simply stop appearing, with no error.
+So every page spreads `OG_DEFAULTS` (from `lib/seo/site.ts`) into its own
+`openGraph` instead of relying on inheritance.
+
+**`robots.ts` and `sitemap.ts` are `force-dynamic`.** `SITE_URL` is a Cloudflare
+runtime variable, so a build-time render of either would bake in the
+`http://localhost:3000` fallback from `siteUrl()` — a sitemap of localhost URLs
+and a robots.txt pointing at one. The sitemap also needs database access, which
+is runtime-only for the same reason. `/viewer` is `force-dynamic` too, purely so
+its canonical URL resolves against the real origin.
+
+**JSON-LD graphs are self-contained.** `lib/seo/schema.ts` emits the
+`Organization` and `WebSite` nodes on *every* page that references them, rather
+than defining them once on the homepage and pointing at them by `@id`. A crawler
+reads one document at a time, so a cross-page `@id` is a dangling reference and
+`author`/`publisher`/`isPartOf` fail to resolve. `components/seo/json-ld.tsx`
+renders the blocks; it escapes `<` so a title containing `</script>` cannot
+close the tag early.
+
+Locked lessons are `noindex, follow` and are left out of the sitemap. Their body
+is withheld server-side (see [Locked lessons](#locked-lessons)), so the page is a
+placeholder — and a set of them would read as near-duplicates. `follow` stays on
+so a crawler still reaches the rest of the workshop through the sidebar.
+
+`app/opengraph-image.tsx` renders one 1200×630 card for the whole site with
+`next/og`. It prerenders to a static PNG at build time, so Satori never runs on
+the Workers runtime. Per-document images are deliberately not generated: it
+would mean a render per crawl of every lesson for a picture that only repeats
+the title already in the card.
+
+## The Markdown viewer
+
+`/viewer` is a public tool: paste Markdown or drop a `.md` file and read it
+rendered. It reuses `components/markdown/markdown-preview.tsx`, so the file is
+read and rendered entirely in the browser and never reaches the server — which
+is both the privacy claim on the page and the reason the route needs no
+database.
+
+The page's own copy (headings, feature list, FAQ) is server-rendered so it is
+indexable; only the editor and preview are client-side. `next/dynamic` with
+`ssr: false` keeps `react-markdown` and its unified chain out of the server
+bundle, as in the admin editor.
+
 ## Layout
 
 ```
 app/
-  (public)/           homepage, /docs, /docs/[slug], /workshops, /workshops/[slug]
+  (public)/           homepage, /viewer, /docs, /docs/[slug], /workshops, /workshops/[slug]
+  robots.ts           robots.txt
+  sitemap.ts          sitemap.xml
+  opengraph-image.tsx the site-wide Open Graph card
   admin/
     login/            the one unprotected /admin route
     (protected)/      dashboard, documents, workshops, categories
     _actions/         server actions (all call requireAdmin() first)
-components/           markdown/, navigation/, admin/, ui/
+components/           markdown/, navigation/, admin/, ads/, seo/, ui/
 lib/
   supabase/           server, proxy and public clients + env access
   auth/               requireAdmin()
   content/            queries (public and admin), kept out of components
   markdown/           render pipeline, Shiki transformer, TOC
+  seo/                site strings, Open Graph defaults, schema.org builders
   validation/         zod schemas shared by the server actions
 supabase/migrations/  schema and RLS
 proxy.ts              session refresh + optimistic /admin redirect
@@ -335,5 +394,5 @@ below the `xl` breakpoint.
 
 ## Not built yet
 
-Search, `sitemap.xml`, `robots.txt`, analytics and ad placements are planned but
-not in this pass.
+Site search and Cloudflare Web Analytics are planned but not in this pass. The
+`WebSite` schema deliberately omits a `SearchAction` until `/search` exists.
