@@ -1,3 +1,4 @@
+import { AdsScript } from "@/components/ads/ads-script";
 import { SiteFooter } from "@/components/navigation/site-footer";
 import { SiteHeader } from "@/components/navigation/site-header";
 
@@ -11,6 +12,8 @@ export default function PublicLayout({ children }: LayoutProps<"/">) {
       <SiteHeader />
       <main className="flex-1">{children}</main>
       <SiteFooter />
+      {/* Public pages only — never loaded under /admin. */}
+      <AdsScript />
     </>
   );
 }

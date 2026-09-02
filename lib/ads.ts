@@ -31,10 +31,14 @@ export function adsEnabled(placement: AdPlacement): boolean {
   return Boolean(adsClientId() && adsSlotId(placement));
 }
 
-/** True when any placement is configured, i.e. the loader script is needed. */
+/**
+ * True when the AdSense loader should be included.
+ *
+ * Only the publisher id is required, deliberately: AdSense site review checks
+ * that its code is present on the site, and that has to be satisfiable before
+ * any ad unit exists. Setting ADS_CLIENT_ID alone puts the code on every public
+ * page and shows no ads; units appear only where a slot id is also set.
+ */
 export function adsScriptNeeded(): boolean {
-  return Boolean(
-    adsClientId() &&
-      (Object.keys(SLOT_ENV) as AdPlacement[]).some((p) => adsSlotId(p)),
-  );
+  return Boolean(adsClientId());
 }

@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { AdSlot } from "@/components/ads/ad-slot";
-import { AdsScript } from "@/components/ads/ads-script";
 import { MarkdownContent } from "@/components/markdown/markdown-content";
 import { TableOfContents } from "@/components/markdown/table-of-contents";
 import { DocSidebarContent } from "@/components/navigation/doc-sidebar";
@@ -132,8 +131,6 @@ export default async function DocumentPage({
           <AdSlot placement="sidebar" />
         </div>
       </aside>
-
-      <AdsScript />
     </div>
   );
 }

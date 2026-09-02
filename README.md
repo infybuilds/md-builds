@@ -247,6 +247,20 @@ ADS_SLOT_ARTICLE_BOTTOM=...
 Server-only names, like the rest: the values reach the browser inside
 server-rendered HTML, so they work as runtime variables.
 
+`ADS_CLIENT_ID` on its own puts the AdSense loader on every public page and shows
+no ads at all. That is the state to deploy for AdSense **site review**, which
+checks that the code is present before any unit exists. Ad units then appear only
+where a slot id is also set.
+
+The loader is a plain `<script async>`, not `next/script`. With
+`afterInteractive` the tag is only injected after hydration, so it never appears
+in the HTML source, and AdSense's verification crawler does not necessarily run
+JavaScript.
+
+`ads.txt` is **not** served by this app, and cannot be: AdSense requires it at the
+root domain (`infybuilds.com/ads.txt`), never on a subdomain. It belongs on the
+main site.
+
 This loads the AdSense library and places each unit explicitly. It does **not**
 use Auto ads, which would inject vignettes and interstitials — the popup formats
 we do not want — and could place units anywhere on the page, including inside the
