@@ -8,6 +8,12 @@
   // built-ins. global_fetch_strictly_public makes fetch() to our own domain go
   // back out through the network rather than short-circuiting internally.
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  // Without this, wrangler treats this file as the sole source of truth for
+  // environment configuration and DELETES dashboard-set variables on every
+  // deploy. Since SUPABASE_URL, SUPABASE_ANON_KEY and SITE_URL are configured in
+  // the dashboard (and no "vars" block here declares them), each CI deploy was
+  // wiping them — which made every route 500, because proxy.ts needs them.
+  "keep_vars": true,
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
