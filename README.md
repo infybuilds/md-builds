@@ -175,6 +175,12 @@ simply ignored — the built code no longer reads `process.env`. Unprefixed name
 are read per request. Renaming these back to `NEXT_PUBLIC_*` would reintroduce
 build-time configuration and break runtime-only setups.
 
+**`keep_vars: true` in `wrangler.jsonc` is load-bearing.** By default wrangler
+treats that file as the only source of truth for environment configuration and
+deletes dashboard-set variables on every deploy. Without the flag, each CI deploy
+silently wiped these three variables, and the site returned 500 on every route.
+Do not remove it unless you move the values into a `vars` block instead.
+
 `SITE_URL` falls back to `http://localhost:3000`, so leaving it unset in
 production silently produces wrong canonical and Open Graph URLs.
 
