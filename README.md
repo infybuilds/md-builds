@@ -213,6 +213,20 @@ described above.
 
 ### Diagnosing a deployed instance
 
+Workers Logs are enabled in `wrangler.jsonc` (`observability.enabled`), sampling
+every request with query strings redacted. Stream them with:
+
+```bash
+npx wrangler tail md-builds --format pretty
+```
+
+Logs are metered, so if traffic grows, lower `head_sampling_rate` (1 = every
+request) rather than turning logging off.
+
+#### Health endpoint
+
+
+
 `GET /api/health` reports which configuration values the worker can actually see,
 whether the old `NEXT_PUBLIC_*` names are still set, and whether Supabase
 answers. It returns 200 when healthy and 503 otherwise, reports presence as

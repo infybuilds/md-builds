@@ -8,6 +8,15 @@
   // built-ins. global_fetch_strictly_public makes fetch() to our own domain go
   // back out through the network rather than short-circuiting internally.
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  // Declared here so it survives deploys, like routes and vars. Enabled because
+  // several production failures had to be diagnosed by inferring from HTTP
+  // status codes: a log line would have said "Invalid URL string" immediately.
+  // redact_query_string keeps request query strings out of the logs.
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
+    "redact_query_string": true
+  },
   // Without this, wrangler treats this file as the sole source of truth for
   // environment configuration and DELETES dashboard-set variables on every
   // deploy. Since SUPABASE_URL, SUPABASE_ANON_KEY and SITE_URL are configured in
