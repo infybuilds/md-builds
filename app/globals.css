@@ -295,3 +295,16 @@
   font-weight: var(--shiki-dark-font-weight) !important;
   text-decoration: var(--shiki-dark-text-decoration) !important;
 }
+
+/* ---------------------------------------------------------------------------
+   Advertising
+   AdSense marks a unit it could not fill with data-ad-status="unfilled". Without
+   this, the reserved height would leave an empty bordered box with an
+   "Advertisement" label — on every page, whenever fill fails and for the whole
+   period before a site is approved. Collapsing the wrapper trades a little
+   layout shift for never showing an empty slot.
+   --------------------------------------------------------------------------- */
+
+.ad-slot:has(ins[data-ad-status="unfilled"]) {
+  display: none;
+}

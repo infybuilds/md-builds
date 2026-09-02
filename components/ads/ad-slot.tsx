@@ -35,7 +35,8 @@ export function AdSlot({
   return (
     <aside
       aria-label="Advertisement"
-      className={`not-prose ${className ?? ""}`}
+      // `ad-slot` is the hook globals.css uses to collapse an unfilled unit.
+      className={`ad-slot not-prose ${className ?? ""}`}
     >
       <p className="text-muted-foreground mb-1.5 text-[10px] tracking-wide uppercase">
         Advertisement
