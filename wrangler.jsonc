@@ -15,7 +15,22 @@
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1,
-    "redact_query_string": true
+    // Request query strings are kept out of logs and traces.
+    "redact_query_string": true,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      // Invocation logs are the per-request lines (method, path, status).
+      "invocation_logs": true,
+      "persist": true
+    },
+    // Distributed tracing stays off: it adds volume and this is a single
+    // Worker with no service-to-service calls to trace.
+    "traces": {
+      "enabled": false,
+      "head_sampling_rate": 1,
+      "persist": true
+    }
   },
   // Without this, wrangler treats this file as the sole source of truth for
   // environment configuration and DELETES dashboard-set variables on every
