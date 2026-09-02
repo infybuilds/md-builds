@@ -308,3 +308,24 @@
 .ad-slot:has(ins[data-ad-status="unfilled"]) {
   display: none;
 }
+
+/* Until an ad actually arrives the slot occupies its reserved space but shows
+   nothing — no border, no label. AdSense will not fill a hidden or zero-height
+   unit, so the space has to stay, but a visitor should not see a labelled empty
+   box flash on every page load while the request is in flight (or forever, on a
+   site that is not approved yet). */
+.ad-slot .ad-label {
+  visibility: hidden;
+}
+
+.ad-slot .ad-frame {
+  border: 1px solid transparent;
+}
+
+.ad-slot:has(ins[data-ad-status="filled"]) .ad-label {
+  visibility: visible;
+}
+
+.ad-slot:has(ins[data-ad-status="filled"]) .ad-frame {
+  border-color: var(--border);
+}

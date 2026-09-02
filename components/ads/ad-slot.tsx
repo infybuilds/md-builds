@@ -38,10 +38,13 @@ export function AdSlot({
       // `ad-slot` is the hook globals.css uses to collapse an unfilled unit.
       className={`ad-slot not-prose ${className ?? ""}`}
     >
-      <p className="text-muted-foreground mb-1.5 text-[10px] tracking-wide uppercase">
+      <p className="ad-label text-muted-foreground mb-1.5 text-[10px] tracking-wide uppercase">
         Advertisement
       </p>
-      <div className={`overflow-hidden rounded-lg border ${RESERVED[placement]}`}>
+      {/* The frame keeps its reserved height so AdSense has a sized container to
+          fill — a hidden or zero-height unit is not filled at all. Its border and
+          label only appear once an ad actually arrives. */}
+      <div className={`ad-frame overflow-hidden rounded-lg ${RESERVED[placement]}`}>
         <ins
           className="adsbygoogle block"
           style={{ display: "block" }}
