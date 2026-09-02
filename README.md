@@ -223,6 +223,38 @@ accident:
   plain text. Adding a language means adding an import, which keeps the worker
   small.
 
+## Advertising
+
+Two placements on document pages only (`/docs/[slug]`): a sticky slot in the
+right rail below the table of contents, and one after the article body before the
+previous/next navigation. Nothing on the homepage, the listings, or anywhere
+under `/admin`.
+
+Both slots sit **outside** the `.prose` container, so an ad can never land inside
+a code block or between paragraphs, and each reserves its height to avoid layout
+shift.
+
+Off by default. A placement renders only when `ADS_CLIENT_ID` *and* that slot's
+id are both set, so an unconfigured deployment ships no third-party script at
+all:
+
+```
+ADS_CLIENT_ID=ca-pub-...
+ADS_SLOT_SIDEBAR=...
+ADS_SLOT_ARTICLE_BOTTOM=...
+```
+
+Server-only names, like the rest: the values reach the browser inside
+server-rendered HTML, so they work as runtime variables.
+
+This loads the AdSense library and places each unit explicitly. It does **not**
+use Auto ads, which would inject vignettes and interstitials — the popup formats
+we do not want — and could place units anywhere on the page, including inside the
+article body. Do not switch it on in the AdSense dashboard.
+
+Note that phones see only the article-bottom slot: the right rail does not exist
+below the `xl` breakpoint.
+
 ## Not built yet
 
 Search, `sitemap.xml`, `robots.txt`, analytics and ad placements are planned but

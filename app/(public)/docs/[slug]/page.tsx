@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AdSlot } from "@/components/ads/ad-slot";
+import { AdsScript } from "@/components/ads/ads-script";
 import { MarkdownContent } from "@/components/markdown/markdown-content";
 import { TableOfContents } from "@/components/markdown/table-of-contents";
 import { DocSidebarContent } from "@/components/navigation/doc-sidebar";
@@ -119,14 +121,19 @@ export default async function DocumentPage({
 
         <MarkdownContent content={document.content} />
 
+        <AdSlot placement="article-bottom" className="mt-12" />
+
         <LessonNav previous={adjacent.previous} next={adjacent.next} />
       </article>
 
       <aside className="hidden xl:block">
-        <div className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto">
+        <div className="sticky top-20 max-h-[calc(100vh-6rem)] space-y-8 overflow-y-auto">
           <TableOfContents entries={toc} />
+          <AdSlot placement="sidebar" />
         </div>
       </aside>
+
+      <AdsScript />
     </div>
   );
 }
