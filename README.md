@@ -189,6 +189,28 @@ The public index pages (`/`, `/docs`, `/workshops`) set
 access. That is what lets a build succeed with no configuration; it also means
 publishing is visible immediately, with no revalidation step.
 
+### Workers Paid is required
+
+The worker is about **3.06 MB gzip**, and the Workers **Free** limit is 3 MB
+after compression (Paid is 10 MB). A free-plan deploy fails with:
+
+```
+✘ [ERROR] Your Worker failed validation because it exceeded size limits.
+```
+
+Note the limit is 3 MB decimal (2,930 KiB), not 3 MiB — easy to misread when
+`wrangler deploy --dry-run` prints the size in KiB.
+
+Shiki accounts for 245 KiB of the bundle (measured: 3064 KiB with it, 2819 KiB
+without). Trimming languages cannot close a 134 KiB gap, because the grammars are
+only 131 KiB of that 245 — the rest is the JS regex engine and its dependencies.
+So the realistic choices were the paid plan or no server-side highlighting, and
+the paid plan won: even without Shiki, free leaves only ~111 KiB of headroom, so
+the next dependency would break the deploy again.
+
+Being on Paid also means Workers KV is available if you want the page caching
+described above.
+
 ### Diagnosing a deployed instance
 
 `GET /api/health` reports which configuration values the worker can actually see,
