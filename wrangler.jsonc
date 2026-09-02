@@ -14,6 +14,22 @@
   // the dashboard (and no "vars" block here declares them), each CI deploy was
   // wiping them — which made every route 500, because proxy.ts needs them.
   "keep_vars": true,
+  // Declared so a deploy does not remove them. Wrangler warned that the remote
+  // config had a custom domain and a SITE_URL var that this file did not declare,
+  // and "uploading the Worker will override the remote configuration with your
+  // local one" — which would have detached md.infybuilds.com. keep_vars protects
+  // vars and secrets, but NOT routes.
+  "routes": [
+    {
+      "pattern": "md.infybuilds.com",
+      "custom_domain": true
+    }
+  ],
+  // Not a secret, and declaring it means a deploy cannot drop it. The Supabase
+  // values stay dashboard-managed secrets, preserved by keep_vars.
+  "vars": {
+    "SITE_URL": "https://md.infybuilds.com"
+  },
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
