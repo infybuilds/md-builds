@@ -9,7 +9,7 @@ import type { Category, Document, Workshop } from "@/types/database";
 
 export type AdminDocumentRow = Pick<
   Document,
-  "id" | "title" | "slug" | "published" | "sort_order" | "updated_at"
+  "id" | "title" | "slug" | "published" | "locked" | "sort_order" | "updated_at"
 > & {
   categories: Pick<Category, "name"> | null;
   workshops: Pick<Workshop, "title"> | null;
@@ -21,23 +21,35 @@ export async function listDocuments(): Promise<AdminDocumentRow[]> {
   const { data } = await supabase
     .from("documents")
     .select(
-      "id, title, slug, published, sort_order, updated_at, categories(name), workshops(title)",
+      "id, title, slug, published, locked, sort_order, updated_at, categories(name), workshops(title)",
     )
     .order("updated_at", { ascending: false });
 
   return data ?? [];
 }
 
+/**
+ * `content` is not directly selectable (see the lock migration), so the body
+ * comes from `admin_document_content`, which checks `is_admin()` itself.
+ */
 export async function getDocument(id: string): Promise<Document | null> {
   const supabase = await createClient();
 
   const { data } = await supabase
     .from("documents")
-    .select("*")
+    .select(
+      "id, title, slug, description, category_id, workshop_id, published, locked, sort_order, created_at, updated_at",
+    )
     .eq("id", id)
     .maybeSingle();
 
-  return data ?? null;
+  if (!data) return null;
+
+  const { data: content } = await supabase.rpc("admin_document_content", {
+    p_id: id,
+  });
+
+  return { ...data, content: content ?? "" };
 }
 
 export async function listCategories(): Promise<Category[]> {

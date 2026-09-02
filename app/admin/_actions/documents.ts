@@ -34,6 +34,7 @@ function readDocumentForm(formData: FormData) {
     category_id: text(formData, "category_id"),
     workshop_id: text(formData, "workshop_id"),
     published: checkbox(formData, "published"),
+    locked: checkbox(formData, "locked"),
     sort_order: text(formData, "sort_order"),
   });
 }

@@ -1,3 +1,4 @@
+import { Lock } from "lucide-react";
 import Link from "next/link";
 
 import type { LessonSummary } from "@/lib/content/public";
@@ -44,7 +45,13 @@ export function DocSidebarContent({
                     <span className="text-muted-foreground tabular-nums">
                       {String(index + 1).padStart(2, "0")}
                     </span>
-                    <span>{lesson.title}</span>
+                    <span className="flex-1">{lesson.title}</span>
+                    {lesson.locked ? (
+                      <Lock
+                        className="text-muted-foreground mt-0.5 size-3 shrink-0"
+                        aria-label="Locked"
+                      />
+                    ) : null}
                   </Link>
                 </li>
               );

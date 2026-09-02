@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Lock } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -78,9 +78,15 @@ export default async function WorkshopPage({
                 <span className="text-muted-foreground pt-px text-sm tabular-nums">
                   {String(index + 1).padStart(2, "0")}
                 </span>
-                <span>
-                  <span className="block text-sm font-medium">
+                <span className="min-w-0">
+                  <span className="flex items-center gap-2 text-sm font-medium">
                     {lesson.title}
+                    {lesson.locked ? (
+                      <Lock
+                        className="text-muted-foreground size-3 shrink-0"
+                        aria-label="Locked"
+                      />
+                    ) : null}
                   </span>
                   {lesson.description ? (
                     <span className="text-muted-foreground mt-0.5 block text-sm">

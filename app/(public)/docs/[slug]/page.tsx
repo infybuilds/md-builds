@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Lock } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -58,7 +59,8 @@ export default async function DocumentPage({
   ]);
 
   const adjacent = findAdjacentLessons(lessons, document.id);
-  const toc = buildToc(document.content);
+  // A locked lesson has no body to build a contents list from.
+  const toc = document.content ? buildToc(document.content) : [];
 
   const sidebar = (
     <DocSidebarContent
@@ -118,7 +120,18 @@ export default async function DocumentPage({
           </details>
         ) : null}
 
-        <MarkdownContent content={document.content} />
+        {document.content === null ? (
+          <div className="bg-muted/40 flex flex-col items-center rounded-lg border border-dashed px-6 py-14 text-center">
+            <Lock className="text-muted-foreground size-5" />
+            <p className="mt-3 font-medium">This lesson is locked</p>
+            <p className="text-muted-foreground mt-1 max-w-sm text-sm">
+              Your instructor will unlock it during the workshop. The other
+              lessons in this workshop are available now.
+            </p>
+          </div>
+        ) : (
+          <MarkdownContent content={document.content} />
+        )}
 
         <AdSlot placement="article-bottom" className="mt-12" />
 

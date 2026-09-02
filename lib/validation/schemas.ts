@@ -51,6 +51,7 @@ export const documentSchema = z.object({
   category_id: optionalIdField,
   workshop_id: optionalIdField,
   published: z.boolean(),
+  locked: z.boolean(),
   sort_order: z.coerce
     .number({ error: "Sort order must be a whole number." })
     .int("Sort order must be a whole number.")

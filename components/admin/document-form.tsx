@@ -248,15 +248,31 @@ export function DocumentForm({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-4 border-t pt-6">
-        <div className="flex items-center gap-2.5">
-          <Checkbox
-            id="published"
-            name="published"
-            defaultChecked={document?.published ?? false}
-          />
-          <Label htmlFor="published" className="font-normal">
-            Published
-          </Label>
+        <div className="flex flex-wrap items-center gap-6">
+          <div className="flex items-center gap-2.5">
+            <Checkbox
+              id="published"
+              name="published"
+              defaultChecked={document?.published ?? false}
+            />
+            <Label htmlFor="published" className="font-normal">
+              Published
+            </Label>
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            <Checkbox
+              id="locked"
+              name="locked"
+              defaultChecked={document?.locked ?? false}
+            />
+            <Label htmlFor="locked" className="font-normal">
+              Locked
+              <span className="text-muted-foreground ml-1.5 text-xs">
+                title visible, body withheld
+              </span>
+            </Label>
+          </div>
         </div>
 
         <SubmitButton pendingLabel="Saving…">{submitLabel}</SubmitButton>

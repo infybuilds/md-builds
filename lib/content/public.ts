@@ -9,7 +9,7 @@ import type { Category, Document, Workshop } from "@/types/database";
 
 export type LessonSummary = Pick<
   Document,
-  "id" | "title" | "slug" | "description" | "sort_order"
+  "id" | "title" | "slug" | "description" | "sort_order" | "locked"
 >;
 
 export type DocumentSummary = LessonSummary & {
@@ -18,13 +18,23 @@ export type DocumentSummary = LessonSummary & {
   workshops: Pick<Workshop, "title" | "slug"> | null;
 };
 
-export type PublishedDocument = Document & {
+/**
+ * `content` is null when the lesson is locked. The body is never fetched in that
+ * case, so it cannot leak through the page or the RSC payload.
+ */
+export type PublishedDocument = Omit<Document, "content"> & {
+  content: string | null;
   categories: Pick<Category, "name" | "slug"> | null;
   workshops: Pick<Workshop, "id" | "title" | "slug"> | null;
 };
 
 const SUMMARY_COLUMNS =
-  "id, title, slug, description, sort_order, updated_at, categories(name, slug), workshops(title, slug)";
+  "id, title, slug, description, sort_order, locked, updated_at, categories(name, slug), workshops(title, slug)";
+
+// Every column except `content`: that one is no longer selectable and comes from
+// the document_content function, which enforces publication and lock state.
+const DOCUMENT_COLUMNS =
+  "id, title, slug, description, category_id, workshop_id, published, locked, sort_order, created_at, updated_at, categories(name, slug), workshops(id, title, slug)";
 
 /**
  * supabase-js resolves rather than throws on failure, so a database or network
@@ -42,13 +52,24 @@ export async function getPublishedDocument(
 
   const { data, error } = await supabase
     .from("documents")
-    .select("*, categories(name, slug), workshops(id, title, slug)")
+    .select(DOCUMENT_COLUMNS)
     .eq("slug", slug)
     .eq("published", true)
     .maybeSingle();
 
   logQueryError(`document ${slug}`, error);
-  return data ?? null;
+  if (!data) return null;
+
+  // Locked: do not even ask for the body, so it cannot reach the browser.
+  if (data.locked) return { ...data, content: null };
+
+  const { data: content, error: contentError } = await supabase.rpc(
+    "document_content",
+    { p_slug: slug },
+  );
+  logQueryError(`document content ${slug}`, contentError);
+
+  return { ...data, content: content ?? null };
 }
 
 /** Ordered lesson list for a workshop, used by the sidebar and prev/next nav. */
@@ -59,7 +80,7 @@ export async function getWorkshopLessons(
 
   const { data, error } = await supabase
     .from("documents")
-    .select("id, title, slug, description, sort_order")
+    .select("id, title, slug, description, sort_order, locked")
     .eq("workshop_id", workshopId)
     .eq("published", true)
     .order("sort_order", { ascending: true })

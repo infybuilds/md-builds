@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Lock, Plus } from "lucide-react";
 import Link from "next/link";
 
 import {
@@ -87,12 +87,20 @@ export default async function AdminDocumentsPage() {
                     ) : null}
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant={document.published ? "default" : "secondary"}
-                      className="font-normal"
-                    >
-                      {document.published ? "Published" : "Draft"}
-                    </Badge>
+                    <div className="flex flex-wrap gap-1.5">
+                      <Badge
+                        variant={document.published ? "default" : "secondary"}
+                        className="font-normal"
+                      >
+                        {document.published ? "Published" : "Draft"}
+                      </Badge>
+                      {document.locked ? (
+                        <Badge variant="outline" className="font-normal">
+                          <Lock className="size-3" />
+                          Locked
+                        </Badge>
+                      ) : null}
+                    </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground whitespace-nowrap">
                     {formatDate(document.updated_at)}

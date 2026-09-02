@@ -259,6 +259,34 @@ accident:
   plain text. Adding a language means adding an import, which keeps the worker
   small.
 
+## Locked lessons
+
+A document can be marked **locked** in the editor. Its title and description stay
+visible in every listing and in the lesson rail, with a padlock, but the body is
+withheld until an admin unlocks it — useful for releasing workshop material as
+you go.
+
+This is enforced server-side, not with a blur. A CSS blur would have been
+worthless: `documents.content` was readable straight from the REST API with the
+publishable key that ships in every page, so any reader could have fetched a
+locked body with one request.
+
+Since RLS is row-level and cannot hide a single column conditionally, `content`
+is instead unreadable to everyone and served only through
+`public.document_content(slug)`, which returns a body only when the document is
+published and unlocked — or when `is_admin()`. The editor reads via
+`public.admin_document_content(id)`. Writes are unaffected: column privileges
+for INSERT and UPDATE are separate from SELECT.
+
+Two consequences worth remembering:
+
+- **Never `select("*")` on `documents`.** The column is not selectable, so a
+  wildcard select fails outright. Use explicit column lists, as the query layer
+  does.
+- The migration is deliberately split. `20260902000003` is additive and safe to
+  apply while an older build is serving; `20260902000004` performs the REVOKE and
+  must only be applied *after* the build that reads via the functions is live.
+
 ## Advertising
 
 Two placements on document pages only (`/docs/[slug]`): a sticky slot in the

@@ -85,6 +85,7 @@ export type Database = {
           category_id: string | null;
           workshop_id: string | null;
           published: boolean;
+          locked: boolean;
           sort_order: number;
           created_at: string;
           updated_at: string;
@@ -98,6 +99,7 @@ export type Database = {
           category_id?: string | null;
           workshop_id?: string | null;
           published?: boolean;
+          locked?: boolean;
           sort_order?: number;
         };
         Update: {
@@ -108,6 +110,7 @@ export type Database = {
           category_id?: string | null;
           workshop_id?: string | null;
           published?: boolean;
+          locked?: boolean;
           sort_order?: number;
         };
         // Needed for embedded selects like `.select("*, categories(name)")` to
@@ -135,6 +138,17 @@ export type Database = {
       is_admin: {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
+      };
+      // `documents.content` is not directly selectable — see
+      // supabase/migrations/20260902000003_lock_content.sql. These enforce
+      // publication and lock state before returning a body.
+      document_content: {
+        Args: { p_slug: string };
+        Returns: string | null;
+      };
+      admin_document_content: {
+        Args: { p_id: string };
+        Returns: string | null;
       };
     };
     Enums: Record<never, never>;
