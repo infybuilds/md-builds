@@ -183,6 +183,25 @@ The public index pages (`/`, `/docs`, `/workshops`) set
 access. That is what lets a build succeed with no configuration; it also means
 publishing is visible immediately, with no revalidation step.
 
+### Diagnosing a deployed instance
+
+`GET /api/health` reports which configuration values the worker can actually see,
+whether the old `NEXT_PUBLIC_*` names are still set, and whether Supabase
+answers. It returns 200 when healthy and 503 otherwise, reports presence as
+booleans only (never values), and is excluded from the proxy matcher so it keeps
+answering when every page is failing.
+
+`proxy.ts` also degrades rather than failing closed on configuration: without
+Supabase config it skips the session refresh and passes the request through, so a
+missing variable no longer turns every route into a 500. It grants nothing —
+`requireAdmin()` still gates `/admin` and needs the same configuration.
+
+One thing to know about builds: OpenNext captures the build-time environment into
+`.open-next/cloudflare/next-env.mjs` and injects it at runtime as a *fallback*.
+Runtime variables take precedence (verified). But it does mean a local
+`npm run deploy` bakes your `.env.local` values into the artifact, so prefer
+building in CI where no `.env.local` exists.
+
 ### Workers-specific constraints
 
 Two things about this runtime are load-bearing, and both are easy to undo by
