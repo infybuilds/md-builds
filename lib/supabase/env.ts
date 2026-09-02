@@ -32,7 +32,32 @@ export function supabaseAnonKey(): string {
   return required("SUPABASE_ANON_KEY", process.env.SUPABASE_ANON_KEY);
 }
 
-/** Absolute origin for canonical and Open Graph URLs. */
+const FALLBACK_SITE_URL = "http://localhost:3000";
+
+/**
+ * Absolute origin for canonical and Open Graph URLs.
+ *
+ * Tolerant on purpose. The root layout feeds this to `new URL()` at module
+ * evaluation time, so a malformed value used to throw before Next could catch
+ * it — taking down every page render (route handlers kept working, which made it
+ * look like a data problem) and returning a bare 500 with no error page.
+ *
+ * A bare host like `example.com` is treated as https, and anything unparseable
+ * falls back to localhost with a loud log rather than breaking the site.
+ */
 export function siteUrl(): string {
-  return process.env.SITE_URL?.replace(/\/$/, "") ?? "http://localhost:3000";
+  const raw = process.env.SITE_URL?.trim();
+  if (!raw) return FALLBACK_SITE_URL;
+
+  const withScheme = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+
+  try {
+    // `.origin` also drops any trailing slash or path.
+    return new URL(withScheme).origin;
+  } catch {
+    console.error(
+      `Invalid SITE_URL (${JSON.stringify(raw)}); falling back to ${FALLBACK_SITE_URL}. Set an absolute origin such as https://md.infybuilds.com.`,
+    );
+    return FALLBACK_SITE_URL;
+  }
 }

@@ -41,6 +41,14 @@ export async function GET() {
 
   const missing = REQUIRED.filter((n) => !present(n));
 
+  // SITE_URL must be an absolute origin: the root layout passes it to `new URL()`
+  // during module evaluation, so a bare host once broke every page render.
+  const rawSiteUrl = runtimeEnv("SITE_URL")?.trim();
+  const siteUrlValid =
+    !rawSiteUrl ||
+    (/^https?:\/\//i.test(rawSiteUrl) &&
+      URL.canParse?.(rawSiteUrl) !== false);
+
   let supabase: { reachable: boolean; status?: number; error?: string } = {
     reachable: false,
     error: "not attempted: configuration missing",
@@ -65,10 +73,10 @@ export async function GET() {
     }
   }
 
-  const ok = missing.length === 0 && supabase.reachable;
+  const ok = missing.length === 0 && supabase.reachable && siteUrlValid;
 
   return Response.json(
-    { ok, missing, config, supabase },
+    { ok, missing, config, siteUrl: { valid: siteUrlValid, hasScheme: Boolean(rawSiteUrl && /^https?:\/\//i.test(rawSiteUrl)) }, supabase },
     { status: ok ? 200 : 503 },
   );
 }
